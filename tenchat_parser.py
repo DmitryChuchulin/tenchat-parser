@@ -37,13 +37,13 @@ HEADERS = {
 HASHTAGS = [
     "cto", "cio", "tekhdirektor", "itdirektor", "founder",
     "predprinimatel", "startaper", "produktmenedzher", "razrabotka", "webrazrabotka",
-    "mobilnayarazrabotka", "backend", "frontend", "devops", "arkhitekturaPO",
+    "mobilnayarazrabotka", "backend", "frontend", "devops", "arkhitekturapo",
     "programmirovaniye", "mvp", "startap", "zapuskprodukta", "prototip",
     "techzadaniye", "avtomatizatsiya", "avtomatizatsiyabiznesa", "tsifrovizatsiya", "tsifrovayatransformatsiya",
-    "tsifrovoybiznes", "crm", "erp", "korporativnoePO", "vnedrenieCRM",
-    "vnedrenieERP", "IIvbiznese", "iskusstvennyintellekt", "neyroseti", "analitikadannykh",
-    "bigdata", "autstaffing", "autsorsing", "ITautstaffing", "razrabotchiki",
-    "biznesprotsessy", "masshtabironaniye", "rostbiznesa", "b2b", "b2bprodazhi",
+    "tsifrovoybiznes", "crm", "erp", "korporativnoepo", "vnedreniecrm",
+    "vnedrenieerp", "iivbiznese", "iskusstvennyintellekt", "neyroseti", "analitikadannykh",
+    "bigdata", "autstaffing", "autsorsing", "itautstaffing", "razrabotchiki",
+    "biznesprotsessy", "masshtabirovaniye", "rostbiznesa", "b2b", "b2bprodazhi",
     "tender", "goszakupki", "zakupki", "fintekh", "korporativnyeresheniya",
     "enterprise",
 ]
