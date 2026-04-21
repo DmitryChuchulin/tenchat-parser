@@ -35,12 +35,17 @@ HEADERS = {
 }
 
 HASHTAGS = [
-    "razrabotka", "itrazrabotka", "veb", "webrazrabotka", "razrabotkasaytov",
-    "mobilnoyeprilozheniye", "razrabotkaprilozheniy", "erp", "crm", "avtomatizatsiya",
-    "tsifrovizatsiya", "biznesprotsessy", "autsorsing", "autstaffing", "cto",
-    "itdirektor", "predprinimatel", "osnovatel", "startap", "mvp",
-    "tender", "upravleniyeproyektami", "ii", "neyroseti", "arkhitektura",
-    "fintekh", "development", "biznes", "delovyyesvyazi", "sotrudnichestvo",
+    "cto", "cio", "tekhdirektor", "itdirektor", "founder",
+    "predprinimatel", "startaper", "produktmenedzher", "razrabotka", "webrazrabotka",
+    "mobilnayarazrabotka", "backend", "frontend", "devops", "arkhitekturaPO",
+    "programmirovaniye", "mvp", "startap", "zapuskprodukta", "prototip",
+    "techzadaniye", "avtomatizatsiya", "avtomatizatsiyabiznesa", "tsifrovizatsiya", "tsifrovayatransformatsiya",
+    "tsifrovoybiznes", "crm", "erp", "korporativnoePO", "vnedrenieCRM",
+    "vnedrenieERP", "IIvbiznese", "iskusstvennyintellekt", "neyroseti", "analitikadannykh",
+    "bigdata", "autstaffing", "autsorsing", "ITautstaffing", "razrabotchiki",
+    "biznesprotsessy", "masshtabironaniye", "rostbiznesa", "b2b", "b2bprodazhi",
+    "tender", "goszakupki", "zakupki", "fintekh", "korporativnyeresheniya",
+    "enterprise",
 ]
 
 CSV_FIELDS = ["title", "author", "date", "url", "views", "hashtag"]
