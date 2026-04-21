@@ -179,6 +179,8 @@ def main() -> int:
                     help=f"Отфильтровать посты опубликованные раньше этой даты (YYYY-MM-DD). По умолчанию {CUTOFF_DATE_DEFAULT}.")
     ap.add_argument("--no-enrich", action="store_true",
                     help="Пропустить шаг дозагрузки даты (даты останутся пустыми, фильтрация не применяется).")
+    ap.add_argument("--sheets", action="store_true",
+                    help="Дозаписать результат в Google Sheets (требует env GOOGLE_CREDENTIALS_JSON и GOOGLE_SHEET_ID).")
     args = ap.parse_args()
 
     session = requests.Session()
@@ -199,6 +201,12 @@ def main() -> int:
     save_csv(result, out)
     print(f"\nГотово. В файле: {len(result)}")
     print(f"Файл: {out}")
+
+    if args.sheets:
+        import sheets_writer
+        added = sheets_writer.write_posts(result)
+        print(f"Google Sheets: добавлено {added} из {len(result)} (остальное — дубли по URL)")
+
     return 0
 
 
