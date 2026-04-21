@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import random
 import re
 import sys
@@ -21,6 +22,7 @@ HASHTAG_URL = BASE_URL + "/hashtag/{tag}"
 TIMEOUT = 20
 MIN_DELAY = 2.0
 MAX_DELAY = 3.0
+CUTOFF_DATE_DEFAULT = "2026-04-14"
 
 HEADERS = {
     "User-Agent": (
@@ -43,8 +45,9 @@ HASHTAGS = [
 
 CSV_FIELDS = ["title", "author", "date", "url", "views", "hashtag"]
 
-# Формат счётчика просмотров: "1234", "2.7K", "185.3K", "1,2 M", "1.2M"
+# Счётчик просмотров: "1234", "2.7K", "185.3K", "1.2M" и т. п.
 VIEWS_RE = re.compile(r"^\d+([.,]\d+)?\s*[KMkmКМкмТтТЫСтыс]*$")
+LD_JSON_RE = re.compile(r'<script type="application/ld\+json">(.*?)</script>', re.S)
 
 
 @dataclass
@@ -86,11 +89,9 @@ def extract_posts(html: str, tag: str) -> list[Post]:
         seen_on_page.add(url)
 
         title = texts[0]
-        # Автор — второй блок, если он не похож на счётчик просмотров
         author = ""
         if len(texts) >= 2 and not VIEWS_RE.match(texts[1]):
             author = texts[1]
-        # Просмотры — последний блок, подходящий под формат счётчика
         views = ""
         for t in reversed(texts):
             if VIEWS_RE.match(t):
@@ -108,9 +109,22 @@ def extract_posts(html: str, tag: str) -> list[Post]:
     return posts
 
 
-def collect(tags: list[str]) -> list[Post]:
+def extract_date_published(html: str) -> str:
+    """Ищет Schema.org datePublished в любом JSON-LD блоке. Возвращает ISO-строку или ''."""
+    for block in LD_JSON_RE.findall(html):
+        try:
+            data = json.loads(block)
+        except json.JSONDecodeError:
+            continue
+        items = data if isinstance(data, list) else [data]
+        for item in items:
+            if isinstance(item, dict) and isinstance(item.get("datePublished"), str):
+                return item["datePublished"]
+    return ""
+
+
+def collect(tags: list[str], session: requests.Session) -> list[Post]:
     seen: dict[str, Post] = {}
-    session = requests.Session()
     for i, tag in enumerate(tags, 1):
         url = HASHTAG_URL.format(tag=tag)
         print(f"[{i}/{len(tags)}] #{tag} → {url}")
@@ -128,6 +142,28 @@ def collect(tags: list[str]) -> list[Post]:
     return list(seen.values())
 
 
+def enrich_and_filter(posts: list[Post], session: requests.Session, cutoff: str) -> list[Post]:
+    kept: list[Post] = []
+    for i, post in enumerate(posts, 1):
+        html = fetch(session, post.url)
+        if html:
+            dp = extract_date_published(html)
+            if dp:
+                post.date = dp
+                day = dp[:10]
+                if day >= cutoff:
+                    kept.append(post)
+                    marker = "+"
+                else:
+                    marker = "-"
+                print(f"  [{i}/{len(posts)}] {marker} {day}  {post.url}")
+            else:
+                print(f"  [{i}/{len(posts)}] ? нет datePublished  {post.url}")
+        if i < len(posts):
+            time.sleep(random.uniform(MIN_DELAY, MAX_DELAY))
+    return kept
+
+
 def save_csv(posts: list[Post], path: Path) -> None:
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
@@ -138,19 +174,30 @@ def save_csv(posts: list[Post], path: Path) -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="TenChat hashtag parser")
-    ap.add_argument(
-        "--tags",
-        nargs="+",
-        default=HASHTAGS,
-        help="Список хештегов (по умолчанию — полный HASHTAGS).",
-    )
+    ap.add_argument("--tags", nargs="+", default=HASHTAGS, help="Список хештегов.")
+    ap.add_argument("--cutoff-date", default=CUTOFF_DATE_DEFAULT,
+                    help=f"Отфильтровать посты опубликованные раньше этой даты (YYYY-MM-DD). По умолчанию {CUTOFF_DATE_DEFAULT}.")
+    ap.add_argument("--no-enrich", action="store_true",
+                    help="Пропустить шаг дозагрузки даты (даты останутся пустыми, фильтрация не применяется).")
     args = ap.parse_args()
 
-    posts = collect(list(args.tags))
+    session = requests.Session()
+
+    print(f"=== Шаг 1: сбор ссылок по {len(args.tags)} тегам ===")
+    posts = collect(list(args.tags), session)
+    print(f"\nУникальных постов после Шага 1: {len(posts)}")
+
+    if args.no_enrich:
+        result = posts
+    else:
+        print(f"\n=== Шаг 2: дозагрузка даты, фильтр cutoff={args.cutoff_date} ===")
+        result = enrich_and_filter(posts, session, args.cutoff_date)
+        print(f"\nПосле фильтрации по дате: {len(result)} из {len(posts)}")
+
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     out = Path(f"posts_{ts}.csv")
-    save_csv(posts, out)
-    print(f"\nГотово. Уникальных постов: {len(posts)}")
+    save_csv(result, out)
+    print(f"\nГотово. В файле: {len(result)}")
     print(f"Файл: {out}")
     return 0
 
