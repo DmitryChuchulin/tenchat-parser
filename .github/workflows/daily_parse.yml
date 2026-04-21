@@ -27,5 +27,26 @@ jobs:
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: |
           CUTOFF=$(date -u -d '2 days ago' +%Y-%m-%d)
+          echo "CUTOFF=$CUTOFF" >> "$GITHUB_ENV"
           echo "cutoff=$CUTOFF"
           python tenchat_parser.py --cutoff-date "$CUTOFF" --sheets
+
+      - name: Notify success
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=✅ TenChat парсер: готово, дата $CUTOFF"
+
+      - name: Notify failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -sS -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=❌ TenChat парсер: ошибка! Логи: https://github.com/DmitryChuchulin/tenchat-parser/actions"
