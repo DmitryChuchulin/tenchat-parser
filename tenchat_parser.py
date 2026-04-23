@@ -45,7 +45,8 @@ HASHTAGS = [
     "bigdata", "autstaffing", "autsorsing", "itautstaffing", "razrabotchiki",
     "biznesprotsessy", "masshtabirovaniye", "rostbiznesa", "b2b", "b2bprodazhi",
     "tender", "goszakupki", "zakupki", "fintekh", "korporativnyeresheniya",
-    "enterprise",
+    "enterprise", "prodakt", "reactjs", "nodejs", "java",
+    "dashboard", "itbiznes", "upravleniyeproyektami", "operatsionnayaeffektivnost", "udalyonnayakomanda",
 ]
 
 CSV_FIELDS = ["title", "author", "date", "url", "views", "hashtag"]
