@@ -31,6 +31,13 @@ jobs:
           echo "cutoff=$CUTOFF"
           python tenchat_parser.py --cutoff-date "$CUTOFF" --sheets
 
+      - name: Run vc.ru parser
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+        run: |
+          python vc_parser.py --cutoff-date "$CUTOFF" --sheets
+
       - name: Notify success
         if: success()
         env:
