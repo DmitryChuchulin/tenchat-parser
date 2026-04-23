@@ -13,8 +13,8 @@ if TYPE_CHECKING:
     from tenchat_parser import Post
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-WORKSHEET_NAME = "posts"
-HEADERS = ["Заголовок", "Автор", "Дата", "URL", "Просмотры", "Хештег"]
+DEFAULT_WORKSHEET_NAME = "posts"
+DEFAULT_HEADERS = ["Заголовок", "Автор", "Дата", "URL", "Просмотры", "Хештег"]
 
 
 def _load_credentials() -> Credentials:
@@ -33,23 +33,30 @@ def _load_credentials() -> Credentials:
     return Credentials.from_service_account_info(info, scopes=SCOPES)
 
 
-def _get_worksheet(client: gspread.Client, sheet_id: str) -> gspread.Worksheet:
+def _get_worksheet(client: gspread.Client, sheet_id: str,
+                   worksheet_name: str, headers: list[str]) -> gspread.Worksheet:
     spreadsheet = client.open_by_key(sheet_id)
     try:
-        ws = spreadsheet.worksheet(WORKSHEET_NAME)
+        ws = spreadsheet.worksheet(worksheet_name)
     except gspread.WorksheetNotFound:
-        ws = spreadsheet.add_worksheet(title=WORKSHEET_NAME, rows=1000, cols=len(HEADERS))
+        ws = spreadsheet.add_worksheet(title=worksheet_name, rows=1000, cols=len(headers))
     first_row = ws.row_values(1)
-    if first_row != HEADERS:
+    if first_row != headers:
         if first_row:
-            ws.insert_row(HEADERS, index=1, value_input_option="USER_ENTERED")
+            ws.insert_row(headers, index=1, value_input_option="USER_ENTERED")
         else:
-            ws.append_row(HEADERS, value_input_option="USER_ENTERED")
+            ws.append_row(headers, value_input_option="USER_ENTERED")
     return ws
 
 
-def write_posts(posts: Sequence["Post"]) -> int:
-    """Дозаписывает посты в лист `posts`, пропуская URL'ы, которые уже есть в колонке D.
+def _category_of(p) -> str:
+    # последнее поле в Post из tenchat называется hashtag, в Article из vc — section
+    return getattr(p, "hashtag", None) or getattr(p, "section", "") or ""
+
+
+def write_posts(posts: Sequence, *, worksheet_name: str = DEFAULT_WORKSHEET_NAME,
+                headers: list[str] = DEFAULT_HEADERS) -> int:
+    """Дозаписывает посты в указанный лист, пропуская URL'ы, которые уже есть в колонке D.
 
     Возвращает количество фактически добавленных строк.
     """
@@ -59,13 +66,13 @@ def write_posts(posts: Sequence["Post"]) -> int:
     if not sheet_id:
         raise RuntimeError("переменная окружения GOOGLE_SHEET_ID не задана")
     client = gspread.authorize(_load_credentials())
-    ws = _get_worksheet(client, sheet_id)
+    ws = _get_worksheet(client, sheet_id, worksheet_name, headers)
 
     existing_urls = set(ws.col_values(4)[1:])  # колонка D, пропускаем заголовок
     fresh = [p for p in posts if p.url not in existing_urls]
     if not fresh:
         return 0
 
-    rows = [[p.title, p.author, p.date, p.url, p.views, p.hashtag] for p in fresh]
+    rows = [[p.title, p.author, p.date, p.url, p.views, _category_of(p)] for p in fresh]
     ws.append_rows(rows, value_input_option="USER_ENTERED")
     return len(rows)
